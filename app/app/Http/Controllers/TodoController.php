@@ -18,13 +18,13 @@ class TodoController extends Controller
     }
 
     /**
-     * ログインしているユーザーのTodoを表示
+     * ログインしているユーザーのTodoを表示する
      */
     public function index(Request $request)
     {
         // DoneのTodoを表示するかどうか(Getパラメーターで判定)
         if ($request->has('done')) {
-            //DoneのTodoを作成日順で表示する
+            // DoneのTodoを作成日順で表示する
             $todos = TodoItem::where(['user_id' => Auth::id(), 'is_done' => true])
                 ->orderBy('created_at', 'desc')
                 ->get();
@@ -36,7 +36,7 @@ class TodoController extends Controller
         }
 
         // compact関数を使うと、変数を配列にまとめて渡せる
-        //ref: https://qiita.com/ryo2132/items/63ced19601b3fa30e6de
+        // ref: https://qiita.com/ryo2132/items/63ced19601b3fa30e6de
         return view('todo.index', compact('todos'));
     }
 
@@ -53,23 +53,23 @@ class TodoController extends Controller
      */
     public function store(Request $request)
     {
-        //バリデーション
+        // バリデーション
         // ref: https://readouble.com/laravel/10.x/ja/validation.html
         $request->validate([
             'title' => 'required|max:255',
         ]);
 
         // Todoを作成する
-        // DB上ではis_doneはデフォルトでfalseだが、明示的にfalseを指定する
-        // user_idは、Auth::id()でログインしているユーザーのIDを取得できる
+        //  DB上ではis_doneはデフォルトでfalseだが、明示的にfalseを指定する
+        //  user_idは、Auth::id()でログインしているユーザーのIDを取得できる
         TodoItem::create(
             [
                 'user_id' => Auth::id(),
                 'title' => $request->title,
                 'is_done' => false,
             ]
-            );
-            return redirect()->route('todo.index');
+        );
+        return redirect()->route('todo.index');
     }
 
     /**
@@ -79,8 +79,20 @@ class TodoController extends Controller
     {
         $todo = TodoItem::find($id);
 
-        //compact関数を使うと、変数を配列にまとめて渡せる
-        //ref: https://qiita.com/ryo2132/items/63ced19601b3fa30e6de
+        // compact関数を使うと、変数を配列にまとめて渡せる
+        // ref: https://qiita.com/ryo2132/items/63ced19601b3fa30e6de
+        return view('todo.show', compact('todo'));
+    }
+
+    /**
+     * Todoの編集
+     */
+    public function edit($id)
+    {
+        $todo = TodoItem::find($id);
+
+        // compact関数を使うと、変数を配列にまとめて渡せる
+        // ref: https://qiita.com/ryo2132/items/63ced19601b3fa30e6de
         return view('todo.edit', compact('todo'));
     }
 
@@ -95,12 +107,20 @@ class TodoController extends Controller
             'title' => 'required|max:255',
         ]);
 
-        //必要な項目だけを書き換えて保存する(※1)
+        // 必要な項目だけを書き換えて保存する(※1)
         $todo = TodoItem::find($id);
         $todo->title = $request->title;
         $todo->save();
 
-        //route()で指定したURLにリダイレクトする
+        // route()で指定したURLにリダイレクトする
+        return redirect()->route('todo.index');
+    }
+
+    public function destroy($id)
+    {
+        TodoItem::find($id)->delete();
+
+        // route()で指定したURLにリダイレクトする
         return redirect()->route('todo.index');
     }
 
@@ -110,14 +130,27 @@ class TodoController extends Controller
     public function done($id)
     {
         // updateメソッドを使うと、指定した項目だけを更新できる
-        // 今回は、is_doneだけを更新
-        // ※1とはまた別の更新方法なところにもポイント。同じ方法でも更新可能
+        //  今回は、is_doneだけを更新する。
+        //  ※1とはまた別の更新方法なところにもポイント。同じ方法でも更新可能。
+        TodoItem::find($id)->update(['is_done' => true]);
+
+        // route()で指定したURLにリダイレクトする
+        return redirect()->route('todo.index');
+    }
+
+    /**
+     * TodoをUnDoneにする
+     */
+    public function undone($id)
+    {
+        // updateメソッドを使うと、指定した項目だけを更新できる
+        //  今回は、is_doneだけを更新する。
+        //  ※1とはまた別の更新方法なところにもポイント。同じ方法でも更新可能。
         TodoItem::find($id)->update(['is_done' => false]);
 
-        //route()で指定したURLにリダイレクト
-        // 第一引数には、ルーティング名を指定
-        // 第二引数に配列でGetパラメータを指定
+        // route()で指定したURLにリダイレクトする
+        //  第一引数には、ルーティング名を指定する
+        //  第二引数に配列でGetパラメーターを指定する
         return redirect()->route('todo.index', ['done' => true]);
     }
 }
-
